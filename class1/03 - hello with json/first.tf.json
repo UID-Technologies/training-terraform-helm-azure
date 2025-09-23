@@ -1,0 +1,7 @@
+{
+    "output": {
+        "hello2": {
+            "value": "Hello World from terraform with json"
+        }
+    }
+}

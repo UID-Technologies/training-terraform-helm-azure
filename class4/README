@@ -1,0 +1,25 @@
+# Project using terraform to create multiple VMs in Azure
+- Multiple VMs - 3
+- Resource Group - 1
+- Network Security Group - 1
+- Virtual Network - 1
+- Subnet - 1
+- Public IP - 1
+
+
+- Load Balancer - 1
+- Availability Set - 1
+- Managed Disk - 3
+
+
+# ssh-keygen
+# ssh-keygen -t rsa -b 4096
+
+
+# > sudo apt update
+# > sudo apt install nginx -y
+# > sudo systemctl start nginx
+# > sudo systemctl enable nginx
+# > sudo systemctl start nginx
+# > sudo echo "<h1>$(hostname)</h1>" | sudo tee /var/www/html/index.nginx-debian.html
+# > sudo systemctl restart nginx

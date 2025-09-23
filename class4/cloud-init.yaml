@@ -1,0 +1,11 @@
+# Cloug-config
+# install nginx and show host name
+
+package_update: true
+packages:
+  - nginx
+runcmd:
+  - sh -c 'echo "Hello from $(hostname)" > /usr/share/nginx/html/index.html'
+  - systemctl start nginx
+  - systemctl enable nginx
+  - systemctl restart nginx
