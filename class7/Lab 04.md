@@ -19,7 +19,7 @@
 
 ---
 
-## 🛠️ Prerequisites
+## Prerequisites
 
 1. Terraform (≥ 1.5.x)
 2. Azure CLI authenticated (`az login`)
