@@ -40,7 +40,8 @@ rules:
 3. **Bind Role to SA**
 
 ```powershell
-$CLUSTER_NAME = kubectl config view -o jsonpath="{.contexts[?(@.name=='$CTX')].context.cluster}"
+
+kubectl -n dev create rolebinding helm-deployer-binding --role=helm-deployer  --serviceaccount=dev:helm-sa
 
 ```
 4. **Create a user context for this SA (demo)**
