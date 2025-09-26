@@ -40,6 +40,12 @@ Teams A & B share the same cluster but must have independent releases and scalin
    ```
 
 ### Verify
+```yaml
+kubectl -n team-a get deploy web-a-nginx
+kubectl -n team-b get deploy web-b-nginx
+
+```
+
 
 * Team‑A has 1 replica; Team‑B has 3 replicas.
 
