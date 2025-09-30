@@ -16,8 +16,8 @@ terraform {
 
 provider "azurerm" {
   features {}
-  subscription_id = "7f12001e-fded-41fd-b58b-f041b465dbed"
-  tenant_id       = "de52d802-5286-4ced-88f2-a6fee88d2b34"
+  subscription_id = ""
+  tenant_id       = ""
   # uses azure CLI auth by default (az login)
 
 }

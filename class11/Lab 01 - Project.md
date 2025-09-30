@@ -12,6 +12,25 @@
 
 ---
 
+### Project Structure
+```yaml
+acmeshop/
+  Chart.yaml
+  values.yaml
+  templates/
+    deployment.yaml     # web (nginx + webapp)
+    api.yaml            # api
+    ingress.yaml        # ingress rules
+  api/
+    Dockerfile
+    server.js
+  webapp
+    Dockerfile
+    server.js
+```
+
+
+
 ## Step 1: Setup AKS & Helm
 
 ```powershell
@@ -57,16 +76,167 @@ This generates a starter chart under `acmeshop/`.
 
 ---
 
-## Step 4: Define Values
+
+## Step 4: WebApp (Node.js frontend)
+
+We’ll make a minimal Express.js frontend that renders a page and also calls your API service.
+
+`webapp/server.js`
+
+```js
+const express = require("express");
+const path = require("path");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Serve static files (if you want to add HTML/CSS/JS later)
+app.use(express.static(path.join(__dirname, "public")));
+
+// Root route
+app.get("/", (req, res) => {
+  res.send(`
+    <html>
+      <head><title>AcmeShop</title></head>
+      <body>
+        <h1>Welcome to AcmeShop WebApp</h1>
+        <p>This page is served by the Node.js webapp, proxied by Nginx.</p>
+        <p>Try the <a href="/products">Products Page</a>.</p>
+      </body>
+    </html>
+  `);
+});
+
+// Products page calls the backend API
+app.get("/products", async (req, res) => {
+  try {
+    const fetch = (await import("node-fetch")).default;
+    const apiResp = await fetch("http://api:8080/api/products"); // service name `api`
+    const products = await apiResp.json();
+
+    let html = "<h2>Product List (from API)</h2><ul>";
+    products.forEach(p => {
+      html += `<li>${p.name} - $${p.price}</li>`;
+    });
+    html += "</ul><a href='/'>Back</a>";
+
+    res.send(html);
+  } catch (err) {
+    res.status(500).send("Error fetching products from API: " + err);
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Webapp running on port ${PORT}`);
+});
+
+```
+
+`webapp/Dockerfile`
+
+```dockerfile
+FROM node:20-alpine
+
+# Set work directory
+WORKDIR /app
+
+# Copy source
+COPY server.js .
+
+# Install dependencies
+RUN npm init -y && npm install express node-fetch
+
+# Expose app port
+EXPOSE 3000
+
+# Run app
+CMD ["node", "server.js"]
+
+```
+
+### Build & Push Image
+
+From inside the webapp/ folder:
+```bash
+# Build Docker image
+docker build -t <docker_hub_account>/webapp:1.0 .
+
+# Push to DockerHub (or ACR if using Azure)
+docker push <docker_hub_account>/webapp:1.0
+
+```
+
+## Step 5: Api (Node.js backend)
+
+We’ll make a minimal Express.js backend 
+
+`api/server.js`
+
+```js
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+app.use(express.json());
+
+app.get("/api", (req, res) => {
+  res.json({ message: "Welcome to AcmeShop API", status: "OK" });
+});
+
+app.get("/api/products", (req, res) => {
+  res.json([
+    { id: 1, name: "Laptop", price: 999 },
+    { id: 2, name: "Phone", price: 499 },
+    { id: 3, name: "Tablet", price: 299 }
+  ]);
+});
+
+app.listen(PORT, () => {
+  console.log(`API running on port ${PORT}`);
+});
+
+
+```
+
+`webapp/Dockerfile`
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY server.js .
+
+RUN npm init -y && npm install express
+
+EXPOSE 8080
+
+CMD ["node", "server.js"]
+
+```
+
+
+
+### Build & Push Image
+```bash
+# Build Docker image
+docker build -t <docker_hub_account>/webapp:1.0 .
+
+# Push to DockerHub (or ACR if using Azure)
+docker push <docker_hub_account>/webapp:1.0
+
+```
+
+
+## Step 6: Define Values
 
 Edit `values.yaml`:
 
 ```yaml
 image:
   registry: docker.io   # replace with ACR if needed
-  web: "nginx:1.27-alpine"
-  app: "myuser/webapp:1.0"
-  api: "myuser/api:1.0"
+  nginx: "nginx:latest"
+  app: "<docker_hub_account>/webapp:1.0"
+  api: "<docker_hub_account>/api:1.0"
 
 web:
   replicas: 2
@@ -80,7 +250,7 @@ api:
 
 ---
 
-## Step 5: Web Deployment (multi-container)
+## Step 7: Web Deployment (multi-container)
 
 Replace `templates/deployment.yaml` with:
 
@@ -123,7 +293,7 @@ spec:
 
 ---
 
-## Step 6: API Deployment
+## Step 8: API Deployment
 
 Create `templates/api.yaml`:
 
@@ -162,7 +332,7 @@ spec:
 
 ---
 
-## Step 7: Ingress
+## Step 9: Ingress
 
 Create `templates/ingress.yaml`:
 
@@ -195,7 +365,7 @@ spec:
 
 ---
 
-## Step 8: Deploy Redis (dependency)
+## Step 10: Deploy Redis (dependency)
 
 ```powershell
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -204,7 +374,7 @@ helm install redis bitnami/redis -n default
 
 ---
 
-## Step 9: Install Your Chart
+## Step 11: Install Your Chart
 
 ```powershell
 # From inside acmeshop/
